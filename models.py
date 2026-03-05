@@ -5,7 +5,7 @@ class Bio(SQLModel, table=True):
     category: str | None = None
     inducted_by: str | None = None
 
-class Inductees(SQLModel, table=True):
+class Non_Performers(SQLModel, table=True):
     name: str = Field(default=None, primary_key=True)
     class_year: int | None = None
     category: str | None = None
