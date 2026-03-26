@@ -22,7 +22,8 @@ def get_bio_instances() -> List[Bio]:
                 name=row['name'],
                 inducted=inducted,
                 category=row['category'] if row['category'] else None,
-                inducted_by=row['inducted_by'] if row['inducted_by'] else None
+                inducted_by=row['inducted_by'] if row['inducted_by'] else None,
+                description=row.get('description') if row.get('description') else None
             )
             bio_instances.append(bio)
     

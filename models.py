@@ -4,6 +4,7 @@ class Bio(SQLModel, table=True):
     inducted: int | None = None
     category: str | None = None
     inducted_by: str | None = None
+    description: str | None = None
 
 class Non_Performers(SQLModel, table=True):
     name: str = Field(default=None, primary_key=True)
