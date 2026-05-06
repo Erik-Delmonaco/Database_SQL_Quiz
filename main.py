@@ -1,5 +1,5 @@
 from fastapi.staticfiles import StaticFiles
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query
 from sqlalchemy import distinct
 from models import Bio, engine
 from sqlmodel import Session, select
@@ -40,5 +40,17 @@ def get_inductees(year: int = Query(...), category: str = Query(...)):
 		inductees = session.exec(statement).all()
 
 	return inductees
+
+@app.get("/inductee")
+def get_inductee(name: str = Query(...)):
+	with Session(engine) as session:
+		statement = select(Bio).where(Bio.name == name)
+		inductee = session.exec(statement).first()
+
+		if inductee is None:
+			raise HTTPException(status_code=404, detail="Inductee not found")
+
+	return inductee
+
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

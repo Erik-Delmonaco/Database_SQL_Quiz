@@ -2,6 +2,9 @@ const yearSelect = document.getElementById("year-select");
 const statusEl = document.getElementById("status");
 const categoriesList = document.getElementById("categories-list");
 const inducteesList = document.getElementById("inductees-list");
+const detailsNameEl = document.getElementById("details-name");
+const detailsInductedByEl = document.getElementById("details-inducted-by");
+const detailsDescriptionEl = document.getElementById("details-description");
 
 let selectedYear = "";
 let selectedCategory = "";
@@ -37,17 +40,65 @@ function showEmptyInductees(message) {
 	inducteesList.appendChild(emptyItem);
 }
 
+function resetInducteeDetails(message = "Select an inductee to view details.") {
+	if (!detailsNameEl || !detailsInductedByEl || !detailsDescriptionEl) {
+		return;
+	}
+
+	detailsNameEl.textContent = message;
+	detailsInductedByEl.textContent = "-";
+	detailsDescriptionEl.textContent = "-";
+}
+
+function renderInducteeDetails(inductee) {
+	if (!detailsNameEl || !detailsInductedByEl || !detailsDescriptionEl) {
+		return;
+	}
+
+	detailsNameEl.textContent = String(inductee.name || "Unknown Inductee");
+	detailsInductedByEl.textContent = String(inductee.inducted_by || "Unknown");
+	detailsDescriptionEl.textContent = String(inductee.description || "No description available.");
+}
+
+async function loadInducteeDetails(name) {
+	setStatus(`Loading details for ${name}...`);
+
+	try {
+		const response = await fetch(`/inductee?name=${encodeURIComponent(name)}`);
+
+		if (!response.ok) {
+			throw new Error(`HTTP ${response.status}`);
+		}
+
+		const inductee = await response.json();
+		renderInducteeDetails(inductee);
+		setStatus(`Showing details for ${name}.`);
+	} catch (error) {
+		resetInducteeDetails(`Unable to load details for ${name}.`);
+		setStatus("Could not load inductee details. Please try another inductee.");
+		console.error("Failed to load inductee details", error);
+	}
+}
+
 function renderInductees(inductees, year, category) {
 	inducteesList.innerHTML = "";
 
 	if (!Array.isArray(inductees) || inductees.length === 0) {
 		showEmptyInductees(`No inductees found in ${category} for ${year}.`);
+		resetInducteeDetails(`No inductees available in ${category} (${year}).`);
 		return;
 	}
 
+	resetInducteeDetails();
+
 	inductees.forEach((name) => {
 		const item = document.createElement("li");
-		item.textContent = String(name);
+		item.dataset.inducteeName = String(name);
+		const button = document.createElement("button");
+		button.type = "button";
+		button.className = "inductee-btn";
+		button.textContent = String(name);
+		item.appendChild(button);
 		inducteesList.appendChild(item);
 	});
 }
@@ -87,6 +138,7 @@ function renderCategories(categories, year) {
 		emptyItem.textContent = `No categories found for ${year}.`;
 		categoriesList.appendChild(emptyItem);
 		showEmptyInductees(`No categories available for ${year}.`);
+		resetInducteeDetails(`No categories available for ${year}.`);
 		return;
 	}
 
@@ -167,11 +219,38 @@ yearSelect.addEventListener("change", (event) => {
 	if (!selectedYear) {
 		categoriesList.innerHTML = "";
 		inducteesList.innerHTML = "";
+		resetInducteeDetails();
 		setStatus("Choose a year to load categories.");
 		return;
 	}
 
 	loadCategoriesForYear(selectedYear);
+});
+
+inducteesList.addEventListener("click", (event) => {
+	const target = event.target;
+
+	if (!(target instanceof Element)) {
+		return;
+	}
+
+	const inducteeItem = target.closest("li");
+
+	if (!inducteeItem || !inducteesList.contains(inducteeItem) || inducteeItem.classList.contains("empty")) {
+		return;
+	}
+
+	const name = inducteeItem.dataset.inducteeName;
+
+	if (!name) {
+		return;
+	}
+
+	document.querySelectorAll("#inductees-list li").forEach((li) => {
+		li.classList.toggle("active", li === inducteeItem);
+	});
+
+	loadInducteeDetails(name);
 });
 
 loadYears();
